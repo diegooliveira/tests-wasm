@@ -1,0 +1,21 @@
+<html>
+<head>
+  <meta charset="utf-8" />
+</head>
+<body>
+    <button onclick="javascript:alert(Window.wasm.instance.exports.sample(10));">Teste</button>
+    <button onclick="Window.wasm.instance.exports.cont(Window.app);">Add 10 years</button>
+    <button onclick="Window.wasm.instance.exports.add_data(Window.app);">Add data</button>
+    <button onclick="javascript:alert(Window.wasm.instance.exports.get_age(Window.app));">Show Age</button>
+  
+    <button onclick="javascript:destroy()">Destroy</button>
+
+    <script src="sample.js"> </script>
+    <script lang="Javascript">
+      function destroy() {
+        Window.wasm.instance.exports.dest(Window.app);
+        Window.app = Window.wasm.instance.exports.start();
+      }
+    </script>
+</body>
+</html>
