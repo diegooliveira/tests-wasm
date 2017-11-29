@@ -5,48 +5,60 @@ use std::mem;
 fn main() {}
 
 
-
-#[no_mangle] // keep the function name untouched
+/// the #[no_mangle] diretive is here to keep the function name untouched
+/// This function just add 55 to some value suplied
+#[no_mangle] 
 pub extern "C" fn sample(value: u32) -> u32 {
 
     value + 55
 }
 
+/// Starts a structure that is "transfered" to the javascript world
 #[no_mangle]
 pub extern "C" fn start() -> *mut usize {
-
-    println!("1");
+    
+    // Put the data structure in the "heap", whatever it means in the webassembly world.
     let sample = Box::new(Sample {
-                              name: String::from("Jhon"),
                               age: 25,
                               data: Vec::new(),
                           });
-    println!("2 Name{} ", sample.name);
-    let ptr: *mut usize = unsafe { mem::transmute(sample) };
-    println!("3 {:?} ", ptr);
 
+    // Create a pointer to the data structure and remove from the rust onwership view
+    let ptr: *mut usize = unsafe { mem::transmute(sample) };
+    
+    // Return to the java script the pointer to the structure
     ptr
 }
 
+// Point to the heap data strucure and add 10 years.
 #[no_mangle]
-pub extern "C" fn cont(ptr: *mut usize) {
+pub extern "C" fn add_ten_years(ptr: *mut usize) {
+
+    // Get back the reference to the data structure
     let mut sample: Box<Sample> = unsafe { mem::transmute(ptr) };
     sample.age += 10;
-    println!("3 {:?} ", ptr);
+
+    // Remove from the rust onwership view
     mem::forget(sample);
 }
 
+// Point to the heap data strucure and get the current age.
 #[no_mangle]
 pub extern "C" fn get_age(ptr: *mut usize) -> i32 {
+
+    // Get back the reference to the data structure
     let sample: Box<Sample> = unsafe { mem::transmute(ptr) };
 
     let age = sample.age;
+
+    // Remove from the rust onwership view
     mem::forget(sample);
 
     age as i32
 }
 
 
+/// Generate some massive amount of data to stress the memory consumpsion
 #[no_mangle]
 pub extern "C" fn add_data(ptr: *mut usize) {
     let mut sample: Box<Sample> = unsafe { mem::transmute(ptr) };
@@ -58,21 +70,14 @@ pub extern "C" fn add_data(ptr: *mut usize) {
     mem::forget(sample);
 }
 
+/// Release the allocated strucutre
 #[no_mangle]
 pub extern "C" fn dest(ptr: *mut usize) {
     let _sample: Box<Sample> = unsafe { mem::transmute(ptr) };
 }
 
 
-
-impl Drop for Sample {
-    fn drop(&mut self) {
-        println!("destroyed {}", self.name);
-    }
-}
-
 pub struct Sample {
-    name: String,
     age: u16,
     data: Vec<usize>,
 }
@@ -83,10 +88,4 @@ impl Sample {
         let new_val = (self.age as usize) * self.data.len();
         self.data.push(new_val);
     }
-}
-#[test]
-fn do_test() {
-
-    let a = start();
-    cont(a);
 }
